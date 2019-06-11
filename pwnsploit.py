@@ -10,9 +10,11 @@ parser.add_argument('-f','--format',action='store_true')
 parser.add_argument('file')
 
 def check_bof(file, timeout=1,payload_size=1000,tries=1):
-    payload = cyclic(payload_size)
+    
+    payload = cyclic(payload_size) #generate a pattern of `payload_size`
 
     p = process(file)
+    #receive until there is no more output
     if p.can_recv(timeout):
         while True:
             if p.recv(timeout=timeout) == '':
@@ -21,6 +23,7 @@ def check_bof(file, timeout=1,payload_size=1000,tries=1):
     p.sendline(payload)
     p.wait()
 
+    #check if the instruction pointer got overwritten with the generated pattern
     try:
         core = Coredump('./core')
         if '64' in core.arch:
@@ -50,12 +53,14 @@ def check_format(file, timeout=1):
 
     p = process(file)
 
+    #receive until there is no more output
     if p.can_recv(timeout):
         while True:
             if p.recv(timeout=timeout) == '':
                 break
 
     p.sendline(payload)
+    #check if 'AAAA' is displayed in hex format in the output
     try:
         output = p.recv()
         
@@ -70,12 +75,16 @@ def check_format(file, timeout=1):
 
 def main():
     args = parser.parse_args()
+
     if args.timeout == None:
         args.timeout = 1
+
     if args.bof:
         check_bof(args.file, args.timeout)
+
     elif args.format:
         check_format(args.file, args.timeout)
+
     else:
         check_bof(args.file, args.timeout)
         check_format(args.file, args.timeout)
