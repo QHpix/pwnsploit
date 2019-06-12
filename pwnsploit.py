@@ -14,10 +14,8 @@ parser.add_argument('-f', '--file')
 def check_bof(file, timeout=1, payload_size=1000, tries=1):
     
     payload = cyclic(payload_size) #generate a pattern of `payload_size`
-    if host and port:
-        p = remote(host, port)
-    else:
-        p = process(file)
+
+    p = process(file)
     #receive until there is no more output
     if p.can_recv(timeout):
         while True:
@@ -42,8 +40,11 @@ def check_bof(file, timeout=1, payload_size=1000, tries=1):
         vulnerable = False
     p.close()
     if vulnerable:
+        elf = ELF(file)
         log.success('Executable is vulnerable to buffer overflow')
         log.success('Padding length: {}'.format(length))
+        if elf.nx:
+            log.info('NX is enabled, so ROP may be required')
 
     elif tries > 10:
         log.info('Executable is NOT vulnerable to buffer overflow')
